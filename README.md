@@ -54,6 +54,20 @@ user message
 - `backend/memory.py` — capped transcript + **structured slots** (what we *know*, vs what was *said*)
 - `evals/` — behavioral test suite
 
+## How to read this codebase (10 minutes, in order)
+
+1. `backend/procedures/returns.md` — what the agent is *told* to do (natural language, CX-editable)
+2. `backend/tools.py` — what the agent *can* do, and the `GateBlocked` rules it cannot bypass
+3. `backend/orchestrator.py` — the control layer: route → load procedure → scope tools (least
+   privilege — the `unknown` procedure gets zero tools) → agent loop
+4. `backend/memory.py` — why "what we KNOW" (slots) is separate from "what was SAID" (history)
+5. `evals/cases.yaml` — the behavioral contract, including the injection case
+6. `frontend/src/components/TracePanel.jsx` — how the architecture is made visible
+
+The model is configurable via `BOOKLY_MODEL` in `.env` — the full eval suite passes on both
+`claude-sonnet-5` and `claude-haiku-4-5-20251001`, because reliability lives in the gates,
+not the model.
+
 ## Assumptions (documented per the brief)
 
 - "Today" is frozen to 2026-07-27 so eligibility results and evals are deterministic.
