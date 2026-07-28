@@ -1,12 +1,16 @@
-"""The control layer. LLM handles language; this file (and tools.py) handle truth and action.
+"""The control layer. The LLM handles language; this file (and tools.py) handle
+truth and action.
 
 Per turn:
-  1. Route intent (with confidence) - low confidence loads the "unknown"
-     procedure, whose only move is to ask a clarifying question.
-  2. Load the matching procedure (natural-language steps a CX person could edit).
-  3. Run the agent loop: model -> tool requests -> Python executes -> repeat.
-     Gates in tools.py can refuse; the refusal goes back to the model as a
-     tool error to relay honestly, and is recorded in the trace.
+  1. Assemble the system prompt: fixed rules + verified session facts + the
+     operating procedures (natural-language markdown a CX person could edit).
+  2. Run the agent loop: model proposes a tool call -> Python executes it ->
+     result goes back to the model -> repeat until it writes a customer reply.
+  3. Gates in tools.py can refuse an action. A refusal is returned to the model
+     as a tool error it must relay honestly, and is recorded in the trace.
+
+Design note: guidance lives in the procedure text, which the model may interpret
+loosely. Enforcement lives in tools.py, which the model cannot argue with.
 """
 import json
 from pathlib import Path
@@ -18,35 +22,33 @@ from memory import Session, get_session
 from schemas import ChatResponse, TraceEvent
 
 PROCEDURES_DIR = Path(__file__).parent / "procedures"
-CONFIDENCE_THRESHOLD = 0.7
 MAX_LOOP_ITERATIONS = 8
-STICKY_INTENTS = {"returns", "order_status"}  # mid-flow turns ("yes", "BK-1042") shouldn't re-route
 
-# Least-privilege tool exposure: each procedure only sees the tools its job
-# requires. The "unknown" procedure gets none - it can only ask a question.
-PROCEDURE_TOOLS = {
-    "order_status": {"lookup_orders", "get_order", "get_policy", "escalate"},
-    "returns": {"lookup_orders", "get_order", "get_policy",
-                "check_return_eligibility", "create_return", "escalate"},
-    "policy_qa": {"get_policy", "escalate"},
-    "unknown": set(),
-}
+# All procedures are loaded once and shown to the model together. They total
+# well under 1k tokens, so selecting one per turn would add a classification
+# call and a misrouting failure mode without buying anything at this scale.
+ALL_PROCEDURES = "\n\n---\n\n".join(
+    p.read_text().strip() for p in sorted(PROCEDURES_DIR.glob("*.md"))
+)
 
 BASE_SYSTEM = """You are the Bookly customer support agent, a friendly and precise \
-assistant for an online bookstore. You follow the OPERATING PROCEDURE below exactly. \
-Never invent order details, policies, or promises - everything customer-specific must \
-come from a tool result. If a tool refuses an action, relay the refusal honestly and \
-follow the procedure's fallback. Keep replies short and warm.
+assistant for an online bookstore. Follow the OPERATING PROCEDURES below exactly, \
+using whichever one matches what the customer needs.
+
+Core rules:
+- Never invent order details, policies, or promises. Everything customer-specific \
+must come from a tool result.
+- If you are not sure what the customer needs, ask one short clarifying question. \
+Do not guess and do not call tools on a guess.
+- If a tool refuses an action, relay the refusal honestly and follow the \
+procedure's fallback. Do not try to work around it.
+- Keep replies short and warm.
 
 KNOWN SESSION FACTS (set by verified tool results, not by the conversation):
 {slots}
 
-OPERATING PROCEDURE
-{procedure}"""
-
-
-def _load_procedure(intent: str) -> str:
-    return (PROCEDURES_DIR / f"{intent}.md").read_text()
+OPERATING PROCEDURES
+{procedures}"""
 
 
 def _serialize_content(content) -> list[dict[str, Any]]:
@@ -63,43 +65,17 @@ def _serialize_content(content) -> list[dict[str, Any]]:
 def handle_message(session_id: str, user_message: str) -> ChatResponse:
     session = get_session(session_id)
     trace: list[TraceEvent] = []
+    session.turn += 1
     session.add("user", user_message)
 
-    # --- 1. Route ---------------------------------------------------------
-    current = session.slots.get("intent")
-    if current in STICKY_INTENTS and not session.slots.get("escalated"):
-        intent = current
-        trace.append(TraceEvent(kind="route", label=f"sticky intent: {intent}"))
-    else:
-        routed = llm_client.route(session.history[-6:])
-        intent = routed["intent"] if routed["confidence"] >= CONFIDENCE_THRESHOLD else "unknown"
-        trace.append(TraceEvent(
-            kind="route",
-            label=f"intent={routed['intent']} confidence={routed['confidence']:.2f} -> using '{intent}'",
-            detail=routed,
-        ))
-    session.slots["intent"] = intent
-
-    # --- 2. Procedure -----------------------------------------------------
-    procedure = _load_procedure(intent)
-    trace.append(TraceEvent(kind="procedure", label=f"loaded procedures/{intent}.md"))
     system = BASE_SYSTEM.format(
         slots=json.dumps(session.snapshot(), indent=2, default=str),
-        procedure=procedure,
+        procedures=ALL_PROCEDURES,
     )
-
-    # --- 3. Agent loop ----------------------------------------------------
-    allowed = PROCEDURE_TOOLS[intent]
-    scoped_specs = [s for s in tools.TOOL_SPECS if s["name"] in allowed]
-    if len(scoped_specs) < len(tools.TOOL_SPECS):
-        trace.append(TraceEvent(
-            kind="note",
-            label=f"tool scope narrowed to: {sorted(allowed) or ['(none)']}",
-        ))
 
     reply = ""
     for _ in range(MAX_LOOP_ITERATIONS):
-        response = llm_client.complete(system, session.history, scoped_specs)
+        response = llm_client.complete(system, session.history, tools.TOOL_SPECS)
         session.add("assistant", _serialize_content(response.content))
 
         if response.stop_reason != "tool_use":
@@ -129,11 +105,7 @@ def handle_message(session_id: str, user_message: str) -> ChatResponse:
             })
         session.add("user", results)
     else:
-        reply = "I'm having trouble completing that - let me hand you to a human specialist."
+        reply = "I'm having trouble completing that. Let me hand you to a human specialist."
         trace.append(TraceEvent(kind="note", label="max loop iterations reached"))
-
-    # Resolved flows shouldn't stay sticky.
-    if session.slots.get("return_created") or session.slots.get("escalated"):
-        session.slots.pop("intent", None)
 
     return ChatResponse(reply=reply, trace=trace, state=session.snapshot())

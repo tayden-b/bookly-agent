@@ -11,8 +11,6 @@ class ChatRequest(BaseModel):
 
 class TraceEvent(BaseModel):
     kind: Literal[
-        "route",        # intent classification result
-        "procedure",    # procedure loaded
         "tool_call",    # tool requested by the model
         "tool_result",  # tool executed successfully
         "gate_blocked", # a code-level gate refused an action

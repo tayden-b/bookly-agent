@@ -16,6 +16,7 @@ MAX_HISTORY_MESSAGES = 30
 @dataclass
 class Session:
     session_id: str
+    turn: int = 0  # increments once per customer message; gates use this
     history: list[dict[str, Any]] = field(default_factory=list)
     slots: dict[str, Any] = field(default_factory=dict)
 

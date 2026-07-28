@@ -76,7 +76,10 @@ def check_return_eligibility(session: Session, order_id: str, item_id: str) -> d
         "reason": "within_window" if eligible else "outside_30_day_window",
     }
     # THE GATE FACT: only this real execution can set it. Not the model.
-    session.slots["eligibility"] = {"order_id": order_id, "item_id": item_id, **verdict}
+    # `turn` is recorded so create_return can require a real customer round-trip.
+    session.slots["eligibility"] = {
+        "order_id": order_id, "item_id": item_id, "turn": session.turn, **verdict
+    }
     return verdict
 
 
@@ -93,6 +96,16 @@ def create_return(
         raise GateBlocked(
             f"Return refused: item is not eligible ({elig['reason']}). "
             "Offer escalation to a human specialist instead."
+        )
+    # Structural consent check. `confirmed` is asserted by the model, so on its own
+    # it can be short-circuited: the model can check eligibility and claim consent in
+    # the same turn, before the customer has been told the refund terms. Requiring a
+    # later turn forces a real round-trip. The model cannot fabricate a customer turn.
+    if session.turn <= elig["turn"]:
+        raise GateBlocked(
+            "Return refused: eligibility was established during this same turn, so the "
+            "customer has not been told the terms and asked yet. Summarize the refund "
+            "terms, ask them to confirm, and create the return after they reply."
         )
     if not confirmed:
         raise GateBlocked(

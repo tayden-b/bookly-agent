@@ -1,6 +1,4 @@
 const KIND_LABEL = {
-  route: "Router",
-  procedure: "Procedure",
   tool_call: "Tool call",
   tool_result: "Tool result",
   gate_blocked: "Gate blocked",

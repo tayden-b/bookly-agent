@@ -32,7 +32,7 @@ cd frontend && npm install && npm run build
 python evals/run_evals.py
 ```
 
-Nine scripted conversations drive the real agent and assert on **behavior** - which tools
+Ten scripted conversations drive the real agent and assert on **behavior** - which tools
 executed, which gates held, which slots got set - not on wording. Includes an injection
 attempt, an ineligible-return case, and a disambiguation case.
 
@@ -40,15 +40,15 @@ attempt, an ineligible-return case, and a disambiguation case.
 
 ```
 user message
-   └─ router (intent + confidence; low confidence -> ask, don't guess)
-        └─ procedure file loaded (procedures/*.md - natural language, CX-editable)
-             └─ agent loop (Anthropic SDK directly; no framework)
-                  └─ tools.py (mocked Bookly APIs)
-                       └─ GATES (code): eligibility checked -> customer confirmed -> then act
-                            └─ reply + full trace (route, tools, gates) to the UI
+   └─ system prompt assembled: rules + verified facts + operating procedures
+        └─ agent loop (Anthropic SDK directly; no framework)
+             └─ model proposes a tool call, Python executes it
+                  └─ GATES (code): eligibility ran -> it passed -> a real customer
+                     round-trip happened -> customer confirmed -> only then act
+                       └─ reply + full trace (tools, gates) to the UI
 ```
 
-- `backend/orchestrator.py` - the control layer: routing, procedure loading, the loop
+- `backend/orchestrator.py` - the control layer: prompt assembly and the loop
 - `backend/tools.py` - mocked business tools + `GateBlocked` enforcement
 - `backend/procedures/` - per-intent operating procedures (markdown, non-engineer-editable)
 - `backend/memory.py` - capped transcript + **structured slots** (what we *know*, vs what was *said*)
@@ -57,9 +57,8 @@ user message
 ## How to read this codebase (10 minutes, in order)
 
 1. `backend/procedures/returns.md` - what the agent is *told* to do (natural language, CX-editable)
-2. `backend/tools.py` - what the agent *can* do, and the `GateBlocked` rules it cannot bypass
-3. `backend/orchestrator.py` - the control layer: route → load procedure → scope tools (least
-   privilege - the `unknown` procedure gets zero tools) → agent loop
+2. `backend/tools.py` - what the agent *can* do, and the four `GateBlocked` rules it cannot bypass
+3. `backend/orchestrator.py` - the control layer: assemble the prompt, run the loop, record the trace
 4. `backend/memory.py` - why "what we KNOW" (slots) is separate from "what was SAID" (history)
 5. `evals/cases.yaml` - the behavioral contract, including the injection case
 6. `frontend/src/components/TracePanel.jsx` - how the architecture is made visible
@@ -76,3 +75,9 @@ not the model.
   not modeled in data.
 - In-memory sessions; a restart clears state.
 - Chat only; voice is a production consideration (latency budget), not prototype scope.
+- All procedures are shown to the model together rather than selected per turn. An earlier
+  version classified intent first and exposed only that procedure's tools (least privilege).
+  At three use cases and under 1k tokens of procedure text it added a classification call and
+  a misrouting failure mode without changing behavior, so it was removed. It is the first
+  thing to reintroduce as the procedure library grows. Trust does not depend on it: the gates
+  read verified facts, not intent.
