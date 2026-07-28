@@ -109,4 +109,18 @@ def handle_message(session_id: str, user_message: str) -> ChatResponse:
         reply = "I'm having trouble completing that. Let me hand you to a human specialist."
         trace.append(TraceEvent(kind="note", label="max loop iterations reached"))
 
+    # A turn that touches no tools would otherwise render as an empty trace,
+    # which reads as a failure. Choosing not to act is a decision worth showing:
+    # it is what a clarifying question looks like from the outside.
+    if not any(e.kind == "tool_call" for e in trace):
+        trace.insert(0, TraceEvent(
+            kind="note",
+            label="no tool calls this turn",
+            detail={
+                "reason": "the model asked a clarifying question or answered "
+                          "from the conversation, so no tool was needed",
+                "tools_available": len(tools.TOOL_SPECS),
+            },
+        ))
+
     return ChatResponse(reply=reply, trace=trace, state=session.snapshot())
