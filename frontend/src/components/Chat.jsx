@@ -4,13 +4,16 @@ import { useEffect, useRef, useState } from "react";
 // raw ** shows up in the chat. This builds React elements rather than setting
 // innerHTML, so model output can never turn into markup.
 function inline(text, key) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") ? (
-      <strong key={`${key}-${i}`}>{part.slice(2, -2)}</strong>
-    ) : (
-      part
-    )
-  );
+  return text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g).map((part, i) => {
+    const k = `${key}-${i}`;
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4)
+      return <strong key={k}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2)
+      return <code key={k}>{part.slice(1, -1)}</code>;
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2)
+      return <em key={k}>{part.slice(1, -1)}</em>;
+    return part;
+  });
 }
 
 function Markdown({ text }) {

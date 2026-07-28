@@ -45,6 +45,10 @@ body { background: var(--bg); color: var(--text); }
 
 /* rendered markdown inside agent replies */
 .md-line:empty { height: 0.6em; }
+.bubble code {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 5px;
+  padding: 0.05em 0.35em; font-size: 0.86em;
+}
 .md-bullet { padding-left: 1.15em; position: relative; }
 .md-bullet::before {
   content: "•"; position: absolute; left: 0.25em; color: var(--dim);
