@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+import llm_client
 import orchestrator
 from memory import reset_session
 from schemas import ChatRequest, ChatResponse
@@ -27,8 +28,9 @@ def reset(session_id: str) -> dict:
 
 @app.get("/api/health")
 def health() -> dict:
-    """Cheap liveness check. Also used to keep the free-tier host awake."""
-    return {"ok": True}
+    """Cheap liveness check. Reports the model so a deploy can be verified
+    without spending a request on the API."""
+    return {"ok": True, "model": llm_client.MODEL}
 
 
 if FRONTEND_DIST.exists():
