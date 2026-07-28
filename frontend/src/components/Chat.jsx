@@ -1,5 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 
+// The model writes light markdown, so bold and bullets need rendering or the
+// raw ** shows up in the chat. This builds React elements rather than setting
+// innerHTML, so model output can never turn into markup.
+function inline(text, key) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <strong key={`${key}-${i}`}>{part.slice(2, -2)}</strong>
+    ) : (
+      part
+    )
+  );
+}
+
+function Markdown({ text }) {
+  return text.split("\n").map((line, i) => {
+    const bullet = line.startsWith("- ");
+    return (
+      <div key={i} className={bullet ? "md-bullet" : "md-line"}>
+        {inline(bullet ? line.slice(2) : line, i)}
+      </div>
+    );
+  });
+}
+
 export default function Chat({ messages, loading, error, onSend }) {
   const [draft, setDraft] = useState("");
   const bottomRef = useRef(null);
@@ -21,7 +45,7 @@ export default function Chat({ messages, loading, error, onSend }) {
       <div className="messages">
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
-            {m.text}
+            {m.role === "agent" ? <Markdown text={m.text} /> : m.text}
           </div>
         ))}
         {loading && (
@@ -29,14 +53,13 @@ export default function Chat({ messages, loading, error, onSend }) {
             <span /><span /><span />
           </div>
         )}
-        {error && <div className="bubble error">⚠️ {error}</div>}
+        {error && <div className="bubble error">{error}</div>}
         <div ref={bottomRef} />
       </div>
       <form className="composer" onSubmit={submit}>
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit(e)}
           placeholder="Ask about an order, a return, or a policy…"
           autoFocus
         />
