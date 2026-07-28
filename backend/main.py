@@ -25,6 +25,12 @@ def reset(session_id: str) -> dict:
     return {"ok": True}
 
 
+@app.get("/api/health")
+def health() -> dict:
+    """Cheap liveness check. Also used to keep the free-tier host awake."""
+    return {"ok": True}
+
+
 if FRONTEND_DIST.exists():
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
 else:
