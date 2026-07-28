@@ -118,6 +118,9 @@ def create_return(
         "created": True,
         "rma": rma,
         "refund": "original payment method, 5-7 business days after warehouse receipt",
+        # Stated explicitly because without it the model invents next steps.
+        # It was promising emailed shipping labels that nothing here produces.
+        "next_steps": "A prepaid return label has been emailed to the address on the order.",
     }
 
 
