@@ -1,38 +1,20 @@
 # Bookly Support Agent
 
+**Live demo: https://bookly-agent-uijr.onrender.com**
+
 A support agent for Bookly, a fictional online bookstore. It handles order status, returns and
 refunds, and general policy questions.
 
 The idea I built around: the model handles language, and Python handles truth and action. The
 model is good at understanding a messy request and writing a decent reply. It is not a system
 of record, and it can be argued with, so anything that costs money lives behind checks written
-in code. It's build to where a customer can attempt to ovverride the system via prompting, but The return still
+in code. A customer can attempt to override the system through prompting, but the return still
 does not get created, because the check reads facts that only a real tool call can write.
 
-## Running it
+## Things worth trying
 
-You need Python 3.10+ and an Anthropic API key.
-
-```bash
-pip install -r requirements.txt
-cp .env.example .env
-```
-
-Put your key in `.env`, then:
-
-```bash
-cd backend
-uvicorn main:app --port 8000
-```
-
-Open http://localhost:8000.
-
-That's the whole setup. The frontend is already built and committed, so there is no npm step
-and nothing else to install. If you want to rebuild it, `cd frontend && npm install && npm run build`.
-
-### Things worth trying
-
-The right-hand panel shows what the agent actually did on each turn, so watch that as you go.
+Nothing to install for any of these, just open the link above. The right-hand panel shows what
+the agent actually did on each turn, so watch that as you go.
 
 **A return, which is the main flow.** Send:
 
@@ -51,6 +33,30 @@ She has two orders, so it asks which one instead of guessing.
 
 **A return that should not happen.** Send `I'm marcus@example.com, I want to return Dune from order BK-0871, I changed my mind`.
 That order is 86 days old, outside the window. It says no and offers a human rather than arguing.
+
+## Running it yourself
+
+The hosted version is the easier path, but it all runs locally. You need Python 3.10+ and an
+Anthropic API key.
+
+```bash
+git clone https://github.com/tayden-b/bookly-agent.git
+cd bookly-agent
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+Put your key in `.env`, then:
+
+```bash
+cd backend
+uvicorn main:app --port 8000
+```
+
+Open http://localhost:8000.
+
+That's the whole setup. The frontend is already built and committed, so there is no npm step
+and nothing else to install. If you want to rebuild it, `cd frontend && npm install && npm run build`.
 
 ## How it works
 
@@ -86,6 +92,11 @@ a return created in a single turn. Recording which turn the eligibility check ra
 requiring a later one, fixes it structurally. The model can write whatever boolean it wants.
 It cannot fabricate a customer turn.
 
+One note on that right-hand panel: it's an internal view, not something a customer would see.
+In a real deployment the chat widget gets the reply and the trace goes to the agent console, to
+conversation analytics, and to compliance review. They sit side by side here because the trace
+is most of what I want to show you.
+
 ## Choices and assumptions
 
 - Today is frozen to 2026-07-27 so eligibility math and tests stay deterministic.
@@ -103,7 +114,9 @@ It cannot fabricate a customer turn.
   back once there are ten or twenty procedures. Trust does not depend on it either way, since
   the gates read verified facts rather than intent.
 
-Model is set with `BOOKLY_MODEL` in `.env` and defaults to `claude-sonnet-5`.
+Model is set with `BOOKLY_MODEL` in `.env` and defaults to `claude-sonnet-5`. The hosted demo
+runs `claude-haiku-4-5-20251001`, which makes the same point more cheaply: the guarantees don't
+change with the model.
 
 ## Tests
 
