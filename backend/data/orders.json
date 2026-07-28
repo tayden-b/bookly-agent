@@ -1,0 +1,50 @@
+{
+  "customers": [
+    {
+      "email": "sarah@example.com",
+      "name": "Sarah Chen",
+      "orders": [
+        {
+          "order_id": "BK-1042",
+          "placed": "2026-07-20",
+          "status": "shipped",
+          "carrier": "UPS",
+          "tracking": "1Z999AA10123456784",
+          "eta": "2026-07-29",
+          "items": [
+            {"item_id": "IT-1", "title": "The Midnight Library", "price": 16.99, "condition_reported": null},
+            {"item_id": "IT-2", "title": "Project Hail Mary", "price": 18.99, "condition_reported": null}
+          ]
+        },
+        {
+          "order_id": "BK-1077",
+          "placed": "2026-07-24",
+          "status": "processing",
+          "carrier": null,
+          "tracking": null,
+          "eta": "2026-08-01",
+          "items": [
+            {"item_id": "IT-3", "title": "Thinking, Fast and Slow", "price": 21.5, "condition_reported": null}
+          ]
+        }
+      ]
+    },
+    {
+      "email": "marcus@example.com",
+      "name": "Marcus Webb",
+      "orders": [
+        {
+          "order_id": "BK-0871",
+          "placed": "2026-05-02",
+          "status": "delivered",
+          "carrier": "USPS",
+          "tracking": "9400110200881234567890",
+          "eta": "2026-05-08",
+          "items": [
+            {"item_id": "IT-9", "title": "Dune", "price": 14.99, "condition_reported": null}
+          ]
+        }
+      ]
+    }
+  ]
+}
