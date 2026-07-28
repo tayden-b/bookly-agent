@@ -28,9 +28,11 @@ export default function TracePanel({ turns }) {
   return (
     <aside className="trace">
       <h2>Behind the scenes</h2>
+      <p className="trace-badge">Internal view, not shown to the customer</p>
       <p className="trace-hint">
         Every turn: which tools the agent called, what they returned, and where a
-        code-level gate refused to act.
+        code-level gate refused to act. In production this goes to the agent
+        console and analytics, not to the chat widget.
       </p>
       {turns.length === 0 && <p className="trace-empty">Send a message to see the trace.</p>}
       {turns.map((turn, i) => (

@@ -101,6 +101,12 @@ body { background: var(--bg); color: var(--text); }
 .trace h2 { font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 0.35rem; }
 .trace h3 { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem; }
 .trace-hint { color: var(--dim); font-size: 0.78rem; margin-bottom: 1rem; line-height: 1.45; }
+.trace-badge {
+  display: inline-block; margin: 0.15rem 0 0.5rem; padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--panel);
+  color: var(--dim); font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
 .trace-empty { color: var(--dim); font-style: italic; }
 
 .turn { margin-bottom: 1.1rem; }
