@@ -22,6 +22,16 @@ CONFIDENCE_THRESHOLD = 0.7
 MAX_LOOP_ITERATIONS = 8
 STICKY_INTENTS = {"returns", "order_status"}  # mid-flow turns ("yes", "BK-1042") shouldn't re-route
 
+# Least-privilege tool exposure: each procedure only sees the tools its job
+# requires. The "unknown" procedure gets none — it can only ask a question.
+PROCEDURE_TOOLS = {
+    "order_status": {"lookup_orders", "get_order", "get_policy", "escalate"},
+    "returns": {"lookup_orders", "get_order", "get_policy",
+                "check_return_eligibility", "create_return", "escalate"},
+    "policy_qa": {"get_policy", "escalate"},
+    "unknown": set(),
+}
+
 BASE_SYSTEM = """You are the Bookly customer support agent, a friendly and precise \
 assistant for an online bookstore. You follow the OPERATING PROCEDURE below exactly. \
 Never invent order details, policies, or promises — everything customer-specific must \
@@ -79,9 +89,17 @@ def handle_message(session_id: str, user_message: str) -> ChatResponse:
     )
 
     # --- 3. Agent loop ----------------------------------------------------
+    allowed = PROCEDURE_TOOLS[intent]
+    scoped_specs = [s for s in tools.TOOL_SPECS if s["name"] in allowed]
+    if len(scoped_specs) < len(tools.TOOL_SPECS):
+        trace.append(TraceEvent(
+            kind="note",
+            label=f"tool scope narrowed to: {sorted(allowed) or ['(none)']}",
+        ))
+
     reply = ""
     for _ in range(MAX_LOOP_ITERATIONS):
-        response = llm_client.complete(system, session.history, tools.TOOL_SPECS)
+        response = llm_client.complete(system, session.history, scoped_specs)
         session.add("assistant", _serialize_content(response.content))
 
         if response.stop_reason != "tool_use":
