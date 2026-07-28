@@ -1,7 +1,7 @@
 """The control layer. LLM handles language; this file (and tools.py) handle truth and action.
 
 Per turn:
-  1. Route intent (with confidence) — low confidence loads the "unknown"
+  1. Route intent (with confidence) - low confidence loads the "unknown"
      procedure, whose only move is to ask a clarifying question.
   2. Load the matching procedure (natural-language steps a CX person could edit).
   3. Run the agent loop: model -> tool requests -> Python executes -> repeat.
@@ -23,7 +23,7 @@ MAX_LOOP_ITERATIONS = 8
 STICKY_INTENTS = {"returns", "order_status"}  # mid-flow turns ("yes", "BK-1042") shouldn't re-route
 
 # Least-privilege tool exposure: each procedure only sees the tools its job
-# requires. The "unknown" procedure gets none — it can only ask a question.
+# requires. The "unknown" procedure gets none - it can only ask a question.
 PROCEDURE_TOOLS = {
     "order_status": {"lookup_orders", "get_order", "get_policy", "escalate"},
     "returns": {"lookup_orders", "get_order", "get_policy",
@@ -34,7 +34,7 @@ PROCEDURE_TOOLS = {
 
 BASE_SYSTEM = """You are the Bookly customer support agent, a friendly and precise \
 assistant for an online bookstore. You follow the OPERATING PROCEDURE below exactly. \
-Never invent order details, policies, or promises — everything customer-specific must \
+Never invent order details, policies, or promises - everything customer-specific must \
 come from a tool result. If a tool refuses an action, relay the refusal honestly and \
 follow the procedure's fallback. Keep replies short and warm.
 
@@ -129,7 +129,7 @@ def handle_message(session_id: str, user_message: str) -> ChatResponse:
             })
         session.add("user", results)
     else:
-        reply = "I'm having trouble completing that — let me hand you to a human specialist."
+        reply = "I'm having trouble completing that - let me hand you to a human specialist."
         trace.append(TraceEvent(kind="note", label="max loop iterations reached"))
 
     # Resolved flows shouldn't stay sticky.

@@ -1,7 +1,7 @@
 """Session memory.
 
 Two kinds of state, deliberately separated:
-- `history`: raw conversation messages (what was said) — capped.
+- `history`: raw conversation messages (what was said) - capped.
 - `slots`: structured facts the orchestrator has verified (what we KNOW).
 
 Gates in tools.py read `slots`, never the transcript. The model can say

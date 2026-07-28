@@ -1,4 +1,4 @@
-"""Thin wrapper around the Anthropic SDK. No framework — the loop lives in orchestrator.py."""
+"""Thin wrapper around the Anthropic SDK. No framework - the loop lives in orchestrator.py."""
 import json
 import os
 from typing import Any

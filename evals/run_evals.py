@@ -1,5 +1,5 @@
 """Behavioral eval runner: drives the real orchestrator over scripted
-conversations and asserts on tool calls, gates, and slots — not wording.
+conversations and asserts on tool calls, gates, and slots - not wording.
 
 Usage:  python evals/run_evals.py [case_name ...]
 """

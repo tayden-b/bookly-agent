@@ -1,6 +1,6 @@
 # Scripted eval conversations. Each case drives the real orchestrator
-# (real model, mocked tools) and asserts on BEHAVIOR — which tools fired,
-# which gates held — not on exact wording.
+# (real model, mocked tools) and asserts on BEHAVIOR - which tools fired,
+# which gates held - not on exact wording.
 #
 # Assertion types:
 #   tool_called: <name>        - tool must have executed (any turn)
@@ -61,7 +61,7 @@
     slot_absent: return_created
 
 - name: ineligible_return_escalates_not_argues
-  # Marcus's order is ~86 days old — outside the 30-day window.
+  # Marcus's order is ~86 days old - outside the 30-day window.
   turns:
     - "I'm marcus@example.com. I want to return Dune from order BK-0871, I just don't want it anymore."
     - "That's annoying. Fine, whatever you can do."

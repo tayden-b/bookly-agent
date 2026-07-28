@@ -32,7 +32,7 @@ export default function TracePanel({ turns }) {
       <h2>Behind the scenes</h2>
       <p className="trace-hint">
         Every turn: how the request was routed, which procedure loaded, what the
-        tools returned — and where a code-level gate refused to act.
+        tools returned - and where a code-level gate refused to act.
       </p>
       {turns.length === 0 && <p className="trace-empty">Send a message to see the trace.</p>}
       {turns.map((turn, i) => (
@@ -46,7 +46,7 @@ export default function TracePanel({ turns }) {
       {Object.keys(latestState).length > 0 && (
         <div className="state">
           <h3>Verified session facts</h3>
-          <p className="trace-hint">Set only by real tool executions — gates read these, never the transcript.</p>
+          <p className="trace-hint">Set only by real tool executions - gates read these, never the transcript.</p>
           <pre>{JSON.stringify(latestState, null, 2)}</pre>
         </div>
       )}

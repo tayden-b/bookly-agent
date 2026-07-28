@@ -34,7 +34,7 @@ else:
 <body style='font-family:system-ui;background:#0b1020;color:#e7ecff;display:grid;place-items:center;height:100vh'>
 <div style='max-width:34rem'>
 <h1>Bookly Support Agent</h1>
-<p>Backend is running. The React frontend hasn't been built yet — run
+<p>Backend is running. The React frontend hasn't been built yet - run
 <code>cd frontend && npm install && npm run build</code>, then restart.</p>
 <p>Or try the API directly:</p>
 <pre style='background:#161d35;padding:1rem;border-radius:8px;overflow:auto'>curl -s localhost:8000/api/chat -H 'content-type: application/json' \\
