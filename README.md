@@ -1,13 +1,13 @@
 # Bookly Support Agent
 
-**Live demo: https://bookly-agent-uijr.onrender.com** (nothing to install, just open it)
+**Live demo: https://bookly-agent-uijr.onrender.com** 
 
 A support agent for Bookly, a fictional online bookstore. It handles order status, returns and
 refunds, and general policy questions.
 
 The idea I built around: the model handles language, and Python handles truth and action. The
 model is good at understanding a messy request and writing a decent reply. It is not a system
-of record, and it can be argued with, so anything that costs money lives behind checks written
+of record, and it can be argued with, so anything that costs money or is a crucial action lives behind checks written
 in code. A customer can attempt to override the system through prompting, but the return still
 does not get created, because the check reads facts that only a real tool call can write.
 
