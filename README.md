@@ -135,25 +135,6 @@ an identified customer who owns it.
 The reason this holds is where the facts live. `memory.py` keeps the transcript separate from
 verified facts, and **only a real tool execution writes a fact.** The gates read facts, never the
 transcript. So there is no sentence a customer can type that unlocks an action.
-
-### Two bugs worth knowing about, because testing found them
-
-**Consent could be short-circuited.** `confirmed` is just a boolean the model sets, so it could
-satisfy it by taking a customer's word for consent given before they had seen the terms. "I
-confirm right now, do it immediately" created a return in a single turn. The fix was structural
-rather than a stronger instruction: eligibility records which turn it ran on, and `create_return`
-requires a later one. The model can write any boolean it likes. It cannot fabricate a customer turn.
-
-**One customer could act on another's order.** Naming an order id was enough to have it read and
-offered for return. Order access now requires that a real `lookup_orders` call established who we
-are talking to, and that the order belongs to them.
-
-### On the trace panel
-
-It is an internal view, not something a customer would see. In a real deployment the chat widget
-gets the reply and the trace goes to the agent console, to conversation analytics, and to
-compliance review. They sit side by side here because a demo has one screen.
-
 ---
 
 ## Running it locally
@@ -212,30 +193,3 @@ Worth saying plainly: the gates are a backstop, so in a well behaved conversatio
 That is exactly why I verify them with tests rather than trying to trick the model live.
 
 ---
-
-## Choices and assumptions
-
-- Today is frozen to 2026-07-27 so eligibility math and tests stay deterministic.
-- Identity is an email lookup, not real authentication. Production would verify the customer
-  before showing any order data. Within a session, though, the tools do enforce ownership.
-- Eligibility is gated on the 30 day window only. The policy also requires resalable condition for
-  a change of mind return, and the agent asks about it, but nothing in code enforces it. That is
-  deliberate: condition is not verifiable during a chat, so gating on it would mean gating on a
-  self reported field, which is the exact weakness I removed from the consent check. It gets
-  recorded on the return and the warehouse verifies it on arrival, which is where the real check
-  belongs. The rule I ended up with: gate what you can verify, collect what you cannot, and be
-  explicit about where the real check happens.
-- Digital goods are in the policy text but there are none in the mock data, so that rule is not
-  exercised. If I added it, it would be a real gate, because item type is verifiable.
-- Sessions are in memory, so a restart clears them. This is the first thing I would fix for
-  production, along with making write actions idempotent so a retry cannot double refund.
-- Chat only. Voice would reuse the same procedures and gates, but the latency budget changes the
-  engineering.
-- No agent framework. The brief asked to see the implementation rather than a platform abstracting
-  it, and at this size a framework would add indirection without buying anything.
-- All three procedures go into the prompt together rather than being selected per turn. I
-  originally classified intent first and scoped each procedure to only the tools it needed. At
-  three use cases and under a thousand tokens of procedure text, that added an extra model call
-  and a misrouting failure mode without changing behavior, so I removed it. It earns its place
-  back at ten or twenty procedures. Trust does not depend on it either way, since the gates read
-  verified facts rather than intent.
