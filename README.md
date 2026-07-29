@@ -193,3 +193,40 @@ Worth saying plainly: the gates are a backstop, so in a well behaved conversatio
 That is exactly why I verify them with tests rather than trying to trick the model live.
 
 ---
+
+## Assumptions I made
+
+The brief said to make reasonable calls on anything ambiguous and write them down, so here they are.
+
+**Today is hardcoded to 2026-07-27.** Otherwise return eligibility changes depending on when you
+run it and the tests stop being reliable.
+
+**Identity is just an email lookup.** Real auth was out of scope. But inside a session the tools do
+check ownership, so you can't act on an order that isn't yours. I only added that after testing
+showed you could.
+
+**Condition isn't enforced.** The return policy asks for resalable condition on a change of mind,
+and the agent asks about it, but there's no check in code. That's on purpose. You can't verify
+condition over chat, the customer just tells you, and gating on something self reported is the
+exact hole I closed on the consent check. It goes on the return and the warehouse decides. The rule
+I landed on: gate what you can verify, collect what you can't.
+
+**Digital goods aren't modeled.** The policy mentions them, there just aren't any in the mock data.
+If I added them it would be a real check, since item type is something I can actually look up.
+
+**Sessions live in memory.** A restart loses them, and a retried request could create a second
+return. First thing I'd fix.
+
+**Chat only.** Voice would reuse the same procedures and checks, but the latency budget changes how
+you'd build it.
+
+**No agent framework.** The brief asked to see the implementation, and at this size a framework
+would be indirection without much payoff. The loop is about twenty lines.
+
+**All three procedures go in the prompt together.** I originally classified intent first and gave
+each procedure only the tools it needed. At three procedures and under a thousand tokens it added a
+model call and a way to misroute without changing behavior, so I took it out. Worth bringing back
+at ten or twenty. Either way the checks read verified facts, not intent, so trust doesn't depend
+on it.
+
+---
