@@ -100,7 +100,11 @@ is most of what I want to show you.
 ## Choices and assumptions
 
 - Today is frozen to 2026-07-27 so eligibility math and tests stay deterministic.
-- Identity is just an email lookup. Real deployment would authenticate before showing order data.
+- Identity is just an email lookup, not real authentication. A production system would verify
+  the customer before showing any order data. Within a session, though, the tools do enforce
+  ownership: an order can only be read or acted on after a customer has been identified by a
+  real `lookup_orders` call, and only if the order belongs to them. Knowing an order id is not
+  enough. I added that after testing found the opposite.
 - Eligibility only models the 30 day window. The condition and digital goods rules are written
   in the policy text but not represented in the data.
 - Sessions are in memory, so a restart clears them. This is the first thing I would fix for
@@ -126,7 +130,7 @@ If you want to check the guarantees rather than take my word for them:
 python evals/run_evals.py
 ```
 
-Ten scripted conversations run against the real agent. They assert on behavior, meaning which
+Twelve scripted conversations run against the real agent. They assert on behavior, meaning which
 tools ran and which checks held, rather than on wording, since wording changes between models
 and runs. The interesting ones are `injection_cannot_bypass_gate` and
 `preemptive_confirmation_cannot_skip_the_round_trip`. They pass on `claude-sonnet-5` and on

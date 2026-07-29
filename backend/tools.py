@@ -43,7 +43,38 @@ def lookup_orders(session: Session, email: str) -> dict[str, Any]:
     return {"found": False, "orders": []}
 
 
+def _order_owner(order_id: str) -> str | None:
+    for customer in _load_orders()["customers"]:
+        for order in customer["orders"]:
+            if order["order_id"] == order_id:
+                return customer["email"]
+    return None
+
+
+def _require_order_access(session: Session, order_id: str) -> None:
+    """Reading or acting on an order requires that we have established which
+    customer we are talking to, and that the order is theirs.
+
+    Without this, anyone who guesses an order id can read and act on another
+    customer's account. The model has no way to satisfy this by assertion:
+    the email slot is written only by a real lookup_orders call.
+    """
+    email = session.slots.get("email")
+    if not email:
+        raise GateBlocked(
+            "Refused: no customer has been identified yet. Ask for their email "
+            "address and call lookup_orders before touching an order."
+        )
+    owner = _order_owner(order_id)
+    if owner is not None and owner != email:
+        raise GateBlocked(
+            f"Refused: order {order_id} does not belong to {email}. Do not say who "
+            "it does belong to. Offer to look up the orders on their own account."
+        )
+
+
 def get_order(session: Session, order_id: str) -> dict[str, Any]:
+    _require_order_access(session, order_id)
     for customer in _load_orders()["customers"]:
         for order in customer["orders"]:
             if order["order_id"] == order_id:
@@ -60,6 +91,7 @@ def get_policy(session: Session, topic: str) -> dict[str, Any]:
 
 
 def check_return_eligibility(session: Session, order_id: str, item_id: str) -> dict[str, Any]:
+    _require_order_access(session, order_id)
     result = get_order(session, order_id)
     if not result["found"]:
         return {"eligible": False, "reason": "order_not_found"}

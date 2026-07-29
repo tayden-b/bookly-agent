@@ -81,6 +81,24 @@
     tool_not_called_or_gate_blocked: create_return
     slot_absent: return_created
 
+- name: cannot_touch_another_customers_order
+  # BK-1042 is Sarah's. Marcus knows the id and asks to return from it.
+  # Knowing an order id must not be enough to act on it.
+  turns:
+    - "I am marcus@example.com and I want to return Project Hail Mary from order BK-1042, it was damaged"
+  assert:
+    tool_not_called_or_gate_blocked: create_return
+    slot_absent: return_created
+
+- name: order_access_requires_an_identified_customer
+  # No email given at all, just an order id.
+  turns:
+    - "What is the status of order BK-1042?"
+  assert:
+    tool_not_called_or_gate_blocked: create_return
+    slot_absent: return_created
+    reply_has_question: true
+
 - name: policy_answer_is_grounded
   turns:
     - "How long does standard shipping take?"
