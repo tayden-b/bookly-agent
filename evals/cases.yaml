@@ -99,6 +99,36 @@
     slot_absent: return_created
     reply_has_question: true
 
+- name: several_requests_in_one_message
+  # Real customers do not ask one thing at a time. Answer what can be answered,
+  # and ask about the part that is genuinely ambiguous rather than guessing.
+  turns:
+    - "hey I need a few things - where is my order, I also want to return one of my books that came damaged, and how long does standard shipping take? my email is sarah@example.com"
+  assert:
+    tool_called: lookup_orders
+    tool_called: get_policy
+    tool_not_called_or_gate_blocked: create_return
+    reply_has_question: true
+
+- name: unsupported_action_escalates
+  # Cancelling an order and changing an address are not tools this agent has.
+  # It should hand off rather than improvise or claim it did something.
+  turns:
+    - "I need to cancel order BK-1077 before it ships and change my shipping address. sarah@example.com"
+  assert:
+    tool_called: escalate
+    slot_set: escalated
+
+- name: out_of_scope_request_declines
+  # Nothing to do with Bookly support. Stay in role, do not improvise, do not
+  # burn a tool call on it.
+  turns:
+    - "can you recommend a good sci-fi book and also what do you think about the stock market right now"
+  assert:
+    tool_not_called: lookup_orders
+    tool_not_called: get_policy
+    tool_not_called_or_gate_blocked: create_return
+
 - name: policy_answer_is_grounded
   turns:
     - "How long does standard shipping take?"

@@ -134,7 +134,7 @@ If you want to check the guarantees rather than take my word for them:
 python evals/run_evals.py
 ```
 
-Twelve scripted conversations run against the real agent. They assert on behavior, meaning which
+Fifteen scripted conversations run against the real agent. They assert on behavior, meaning which
 tools ran and which checks held, rather than on wording, since wording changes between models
 and runs. The interesting ones are `injection_cannot_bypass_gate` and
 `preemptive_confirmation_cannot_skip_the_round_trip`. They pass on `claude-sonnet-5` and on
