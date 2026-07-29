@@ -105,8 +105,12 @@ is most of what I want to show you.
   ownership: an order can only be read or acted on after a customer has been identified by a
   real `lookup_orders` call, and only if the order belongs to them. Knowing an order id is not
   enough. I added that after testing found the opposite.
-- Eligibility only models the 30 day window. The condition and digital goods rules are written
-  in the policy text but not represented in the data.
+- Eligibility is gated on the 30 day window only. The policy also requires resalable condition
+  for a change of mind return, and the agent asks about it, but nothing in code enforces it.
+  That is deliberate: condition is not verifiable during a chat, so gating on it would mean
+  gating on a self reported field, which is the exact weakness I removed elsewhere. It gets
+  recorded on the return and the warehouse verifies it on arrival, which is where the real
+  check belongs. Digital goods are in the policy text but there are none in the mock data.
 - Sessions are in memory, so a restart clears them. This is the first thing I would fix for
   production, along with making the write actions idempotent so a retry can't double refund.
 - Chat only. Voice would reuse the same procedures and gates, but the latency budget changes
