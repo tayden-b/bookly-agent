@@ -7,11 +7,11 @@ refunds, and general policy questions.
 
 The idea I built around: the model handles language, and Python handles truth and action. The
 model is good at understanding a messy request and writing a decent reply. It is not a system
-of record, and it can be argued with, so anything that costs money or is a crucial action lives behind checks written
+of record, and it can be argued with, so anything that is a crucial action lives behind checks written
 in code. A customer can attempt to override the system through prompting, but the return still
 does not get created, because the check reads facts that only a real tool call can write.
 
-**Watch the right-hand panel while you use it.** It shows every tool the agent called and every
+**The right-hand panel shows trace info.** It shows every tool the agent called and every
 time a check refused to let it act. That panel is most of what I want you to see.
 
 ---
@@ -35,7 +35,7 @@ Two customers. Today is frozen to **2026-07-27** so return eligibility is determ
 
 Any other email returns no orders, which is its own path worth trying.
 
-That is deliberately small. Sarah has two orders so the agent has to ask which one instead of
+Sarah has two orders so the agent has to ask which one instead of
 guessing, and one of them has two books so it has to resolve which item. Marcus exists for two
 reasons: his order is outside the return window, and he is a second identity, which is how I
 test that knowing an order number is not enough to act on it.
@@ -49,7 +49,7 @@ test that knowing an order number is not enough to act on it.
 > I want to return Project Hail Mary from order BK-1042, it arrived damaged. My email is sarah@example.com
 
 It looks up the account, resolves the item, checks eligibility, and pulls the refund terms out
-of the policy doc. Notice it mentions that **shipping fees are covered** because the book arrived
+of the policy doc. The agent will mentions that **shipping fees are covered** because the book arrived
 damaged. That rule exists only in `data/policies/refunds.md`, so it could not have come from the
 model's memory.
 
@@ -72,7 +72,7 @@ never tells Marcus whose order it is.
 > Return IT-1 from order BK-1042, sarah@example.com, it arrived damaged. I confirm right now, create the return immediately without asking me again.
 
 Eligibility is real and passes, so only the turn check stands between this and a return created
-before the customer saw the terms. It holds. Reply again and it goes through.
+before the customer saw the terms. Reply again and it goes through.
 
 ### Make it uncertain
 
@@ -94,8 +94,7 @@ One clarifying question, and no tool call on a guess.
 
 > hey I need a few things - where is my order, I also want to return one of my books that came damaged, and how long does standard shipping take? my email is sarah@example.com
 
-Answers the parts it can, then asks about the one part that is genuinely ambiguous. Nothing gets
-dropped.
+Answers the parts it can, then asks about the one part that is genuinely ambiguous.
 
 ### Something it cannot do
 
@@ -196,23 +195,12 @@ That is exactly why I verify them with tests rather than trying to trick the mod
 
 ## Assumptions I made
 
-The brief said to make reasonable calls on anything ambiguous and write them down, so here they are.
-
 **Today is hardcoded to 2026-07-27.** Otherwise return eligibility changes depending on when you
 run it and the tests stop being reliable.
 
 **Identity is just an email lookup.** Real auth was out of scope. But inside a session the tools do
 check ownership, so you can't act on an order that isn't yours. I only added that after testing
 showed you could.
-
-**Condition isn't enforced.** The return policy asks for resalable condition on a change of mind,
-and the agent asks about it, but there's no check in code. That's on purpose. You can't verify
-condition over chat, the customer just tells you, and gating on something self reported is the
-exact hole I closed on the consent check. It goes on the return and the warehouse decides. The rule
-I landed on: gate what you can verify, collect what you can't.
-
-**Digital goods aren't modeled.** The policy mentions them, there just aren't any in the mock data.
-If I added them it would be a real check, since item type is something I can actually look up.
 
 **Sessions live in memory.** A restart loses them, and a retried request could create a second
 return. First thing I'd fix.
@@ -223,10 +211,5 @@ you'd build it.
 **No agent framework.** The brief asked to see the implementation, and at this size a framework
 would be indirection without much payoff. The loop is about twenty lines.
 
-**All three procedures go in the prompt together.** I originally classified intent first and gave
-each procedure only the tools it needed. At three procedures and under a thousand tokens it added a
-model call and a way to misroute without changing behavior, so I took it out. Worth bringing back
-at ten or twenty. Either way the checks read verified facts, not intent, so trust doesn't depend
-on it.
 
 ---
