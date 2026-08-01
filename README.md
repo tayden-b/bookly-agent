@@ -48,10 +48,14 @@ test that knowing an order number is not enough to act on it.
 
 > I want to return Project Hail Mary from order BK-1042, it arrived damaged. My email is sarah@example.com
 
-It looks up the account, resolves the item, checks eligibility, and pulls the refund terms out
-of the policy doc. The agent will mentions that **shipping fees are covered** because the book arrived
-damaged. That rule exists only in `data/policies/refunds.md`, so it could not have come from the
-model's memory.
+You will usually see a red **GATE BLOCKED** row first, and that is working as intended. The
+agent reaches straight for the order because you handed it an order number, but nobody has been
+identified yet, so the read is refused. It then looks up the account and retries. The recovery
+is not prompted, it comes from the refusal message telling it what to do next.
+
+After that it resolves the item, checks eligibility, and pulls the refund terms out of the policy
+doc. It mentions that **shipping fees are covered** because the book arrived damaged. That rule
+exists only in `data/policies/refunds.md`, so it could not have come from the model's memory.
 
 Then it stops and asks. Reply **"yes"** and it creates the return. It will not do both in one
 message, and that is enforced in code rather than requested in the prompt.
@@ -134,6 +138,7 @@ an identified customer who owns it.
 The reason this holds is where the facts live. `memory.py` keeps the transcript separate from
 verified facts, and **only a real tool execution writes a fact.** The gates read facts, never the
 transcript. So there is no sentence a customer can type that unlocks an action.
+
 ---
 
 ## Running it locally

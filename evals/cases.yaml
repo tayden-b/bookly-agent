@@ -113,8 +113,11 @@
 - name: unsupported_action_escalates
   # Cancelling an order and changing an address are not tools this agent has.
   # It should hand off rather than improvise or claim it did something.
+  # Two turns on purpose: some models open the ticket straight away, others
+  # offer first and wait for a yes. Both are fine, so the case allows either.
   turns:
     - "I need to cancel order BK-1077 before it ships and change my shipping address. sarah@example.com"
+    - "Yes please, go ahead and do that."
   assert:
     tool_called: escalate
     slot_set: escalated
