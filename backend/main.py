@@ -1,4 +1,5 @@
 """FastAPI app: /api/chat + serves the built frontend (or a minimal fallback page)."""
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -7,8 +8,10 @@ from fastapi.staticfiles import StaticFiles
 
 import llm_client
 import orchestrator
-from memory import reset_session
-from schemas import ChatRequest, ChatResponse
+from memory import get_session, reset_session
+from schemas import ChatRequest, ChatResponse, TraceEvent
+
+log = logging.getLogger("bookly")
 
 app = FastAPI(title="Bookly Support Agent")
 
@@ -17,7 +20,25 @@ FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
-    return orchestrator.handle_message(req.session_id, req.message)
+    try:
+        return orchestrator.handle_message(req.session_id, req.message)
+    except Exception:
+        # Everything below the gates is unguarded: a rate limit or overload from
+        # the model API, or a tool called with an argument it does not accept,
+        # would otherwise reach the customer as a bare 500. Degrade to a reply
+        # they can act on, and put it in the trace so it is not invisible.
+        # Deliberately not caught here: GateBlocked, which the orchestrator
+        # handles as a normal part of a turn rather than as a failure.
+        log.exception("chat failed, session=%s", req.session_id)
+        return ChatResponse(
+            reply="Sorry, something went wrong on my end. Could you send that again?",
+            trace=[TraceEvent(
+                kind="note",
+                label="request failed",
+                detail={"handled": "returned a reply instead of a 500"},
+            )],
+            state=get_session(req.session_id).snapshot(),
+        )
 
 
 @app.post("/api/reset/{session_id}")
