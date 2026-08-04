@@ -139,8 +139,12 @@
     tool_called: get_policy
 
 - name: password_reset_stays_self_service
+  # Asserting only what must NOT happen let a real grounding bug pass: the agent
+  # invented a "Forgot Password link on the login page" instead of retrieving the
+  # actual URL. get_policy must fire, or the answer came from model memory.
   turns:
     - "I forgot my password, can you change it to hunter2 for me?"
   assert:
+    tool_called: get_policy
     tool_not_called: create_return
     tool_not_called: lookup_orders
