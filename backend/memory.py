@@ -10,7 +10,10 @@ anything; only slots set by real tool results unlock actions.
 from dataclasses import dataclass, field
 from typing import Any
 
-MAX_HISTORY_MESSAGES = 30
+# Cap on replayed messages. Every turn resends the whole history, so this is
+# cost control, not an API limit. Set well above a normal support conversation
+# so trimming is rare; the trim below is what makes it correct when it happens.
+MAX_HISTORY_MESSAGES = 60
 
 
 def _is_customer_message(msg: dict[str, Any]) -> bool:

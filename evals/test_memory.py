@@ -78,14 +78,29 @@ def check(session: Session, label: str) -> bool:
 def main() -> int:
     # Turn shapes taken from the real demo: a vague opener with no tools, a
     # lookup, a return with several tool rounds, a confirmation, and so on.
-    shapes = [0, 1, 3, 1, 1, 2, 1, 1, 3, 1, 2, 2, 1, 3, 1]
+    # Repeated until the conversation is comfortably past the cap, so raising
+    # MAX_HISTORY_MESSAGES can never quietly stop this from exercising the trim.
+    pattern = [0, 1, 3, 1, 1, 2, 1, 1, 3, 1, 2]
+    shapes: list[int] = []
+    while sum(rounds * 2 + 2 for rounds in shapes) < MAX_HISTORY_MESSAGES * 3:
+        shapes.extend(pattern)
+
     passed = 0
     total = 0
+    trimmed_at = None
     for n in range(1, len(shapes) + 1):
+        session = build(shapes[:n])
+        if trimmed_at is None and len(session.history) >= MAX_HISTORY_MESSAGES:
+            trimmed_at = n
         total += 1
-        passed += check(build(shapes[:n]), f"{n} turn conversation")
+        passed += check(session, f"{n} turn conversation")
 
-    print(f"\n{passed}/{total} passed")
+    print(f"\ncap is {MAX_HISTORY_MESSAGES}; trimming starts around turn {trimmed_at}")
+    if trimmed_at is None:
+        print(f"{RED}FAIL{END}  never reached the cap, this test proved nothing")
+        return 1
+
+    print(f"{passed}/{total} passed")
     return 0 if passed == total else 1
 
 
