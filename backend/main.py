@@ -2,20 +2,27 @@
 import logging
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 import llm_client
 import orchestrator
 from memory import get_session, reset_session
-from schemas import ChatRequest, ChatResponse, TraceEvent
+from schemas import ChatRequest, ChatResponse, ProcedureUpdate, TraceEvent
 
 log = logging.getLogger("bookly")
 
 app = FastAPI(title="Bookly Support Agent")
 
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+
+# Originals captured at startup so a live edit is always one click from clean.
+# Also acts as the whitelist: only files that existed at boot can be edited,
+# so the write endpoint can never create files or touch anything else.
+_ORIGINAL_PROCEDURES = {
+    p.name: p.read_text() for p in sorted(orchestrator.PROCEDURES_DIR.glob("*.md"))
+}
 
 
 @app.post("/api/chat", response_model=ChatResponse)
@@ -45,6 +52,32 @@ def chat(req: ChatRequest) -> ChatResponse:
 def reset(session_id: str) -> dict:
     reset_session(session_id)
     return {"ok": True}
+
+
+@app.get("/api/procedures")
+def list_procedures() -> list[dict]:
+    out = []
+    for name, original in _ORIGINAL_PROCEDURES.items():
+        content = (orchestrator.PROCEDURES_DIR / name).read_text()
+        out.append({"name": name, "content": content, "modified": content != original})
+    return out
+
+
+@app.put("/api/procedures/{name}")
+def update_procedure(name: str, req: ProcedureUpdate) -> dict:
+    if name not in _ORIGINAL_PROCEDURES:
+        raise HTTPException(404, f"unknown procedure: {name}")
+    (orchestrator.PROCEDURES_DIR / name).write_text(req.content)
+    return {"ok": True}
+
+
+@app.post("/api/procedures/{name}/reset")
+def reset_procedure(name: str) -> dict:
+    if name not in _ORIGINAL_PROCEDURES:
+        raise HTTPException(404, f"unknown procedure: {name}")
+    original = _ORIGINAL_PROCEDURES[name]
+    (orchestrator.PROCEDURES_DIR / name).write_text(original)
+    return {"ok": True, "content": original}
 
 
 @app.get("/api/health")

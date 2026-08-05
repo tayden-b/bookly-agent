@@ -23,11 +23,28 @@ function Event({ event }) {
   );
 }
 
-export default function TracePanel({ turns }) {
+export default function TracePanel({ turns, open = true, onToggle }) {
   const latestState = turns.at(-1)?.state ?? {};
+  if (!open) {
+    return (
+      <aside className="trace rail">
+        <button className="trace-toggle" onClick={onToggle} title="Show the trace panel">
+          &#9666;
+        </button>
+        <span className="rail-label">Behind the scenes</span>
+      </aside>
+    );
+  }
   return (
     <aside className="trace">
-      <h2>Behind the scenes</h2>
+      <div className="trace-head">
+        <h2>Behind the scenes</h2>
+        {onToggle && (
+          <button className="trace-toggle" onClick={onToggle} title="Hide the trace panel">
+            &#9656;
+          </button>
+        )}
+      </div>
       <p className="trace-badge">Internal view, not shown to the customer</p>
       <p className="trace-hint">
         Every turn: which tools the agent called, what they returned, and where a

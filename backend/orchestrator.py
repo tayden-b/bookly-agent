@@ -24,12 +24,15 @@ from schemas import ChatResponse, TraceEvent
 PROCEDURES_DIR = Path(__file__).parent / "procedures"
 MAX_LOOP_ITERATIONS = 8
 
-# All procedures are loaded once and shown to the model together. They total
-# well under 1k tokens, so selecting one per turn would add a classification
-# call and a misrouting failure mode without buying anything at this scale.
-ALL_PROCEDURES = "\n\n---\n\n".join(
-    p.read_text().strip() for p in sorted(PROCEDURES_DIR.glob("*.md"))
-)
+# All procedures are shown to the model together. They total well under 1.5k
+# tokens, so selecting one per turn would add a classification call and a
+# misrouting failure mode without buying anything at this scale.
+# Read fresh each turn (not once at import) so edits made through the
+# procedures UI take effect on the customer's next message.
+def load_procedures() -> str:
+    return "\n\n---\n\n".join(
+        p.read_text().strip() for p in sorted(PROCEDURES_DIR.glob("*.md"))
+    )
 
 BASE_SYSTEM = """You are the Bookly customer support agent, a friendly and precise \
 assistant for an online bookstore. Follow the OPERATING PROCEDURES below exactly, \
@@ -78,7 +81,7 @@ def handle_message(session_id: str, user_message: str) -> ChatResponse:
 
     system = BASE_SYSTEM.format(
         slots=json.dumps(session.snapshot(), indent=2, default=str),
-        procedures=ALL_PROCEDURES,
+        procedures=load_procedures(),
     )
 
     reply = ""

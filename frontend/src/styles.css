@@ -30,9 +30,20 @@ body { background: var(--bg); color: var(--text); }
 }
 .reset:hover { border-color: #d0d0d0; background: var(--panel); }
 
+/* ---------- header view tabs ---------- */
+.views { display: flex; gap: 0.3rem; background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 0.2rem; }
+.view-tab {
+  background: transparent; border: none; border-radius: 999px; cursor: pointer;
+  padding: 0.35rem 0.95rem; font-size: 0.82rem; font-weight: 600; color: var(--dim);
+  transition: background 0.15s, color 0.15s;
+}
+.view-tab.active { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06); }
+
 /* ---------- layout ---------- */
-.panes { display: grid; grid-template-columns: 1fr 400px; flex: 1; min-height: 0; }
-@media (max-width: 900px) { .panes { grid-template-columns: 1fr; } .trace { display: none; } }
+.panes { display: grid; grid-template-columns: 1fr 400px; flex: 1; min-height: 0; transition: grid-template-columns 0.2s ease; }
+.panes.trace-collapsed { grid-template-columns: 1fr 34px; }
+.panes.single { grid-template-columns: 1fr; }
+@media (max-width: 900px) { .panes, .panes.trace-collapsed { grid-template-columns: 1fr; } .trace { display: none; } }
 
 /* ---------- chat ---------- */
 .chat { display: flex; flex-direction: column; min-height: 0; background: #fff; }
@@ -147,3 +158,100 @@ body { background: var(--bg); color: var(--text); }
   overflow-x: auto; font-size: 0.72rem; line-height: 1.5; margin-top: 0.45rem; color: #444;
 }
 .state { border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.6rem; }
+
+/* ---------- trace collapse ---------- */
+.trace-head { display: flex; justify-content: space-between; align-items: center; }
+.trace-toggle {
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  width: 26px; height: 26px; cursor: pointer; color: var(--dim); font-size: 0.8rem;
+  line-height: 1; flex-shrink: 0;
+}
+.trace-toggle:hover { border-color: #d0d0d0; color: var(--text); }
+.trace.rail {
+  padding: 0.9rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.9rem;
+  overflow: hidden;
+}
+.rail-label {
+  writing-mode: vertical-rl; color: var(--dim); font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.09em;
+}
+
+/* ---------- procedures ---------- */
+.procs { overflow-y: auto; background: var(--panel); }
+.procs-inner { max-width: 760px; margin: 0 auto; padding: 2.2rem 1.5rem 3rem; }
+.procs-title { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; }
+.procs-sub { color: var(--dim); font-size: 0.88rem; margin: 0.4rem 0 1.4rem; line-height: 1.5; max-width: 56ch; }
+.proc-loading, .proc-error { padding: 2rem; color: var(--dim); }
+.proc-error { color: var(--danger); }
+
+.proc-card {
+  display: block; width: 100%; text-align: left; background: #fff;
+  border: 1px solid var(--border); border-radius: 14px; padding: 1.05rem 1.25rem;
+  margin-bottom: 0.7rem; cursor: pointer; font: inherit; color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.proc-card:hover { border-color: #d0d0d0; box-shadow: 0 2px 8px rgb(0 0 0 / 0.05); }
+.proc-card-head { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.25rem; }
+.proc-card-title { font-weight: 700; font-size: 0.98rem; }
+.proc-card-when { color: var(--dim); font-size: 0.85rem; line-height: 1.5; }
+.proc-flag {
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--amber); background: #fffaeb; border: 1px solid #fedf89;
+  border-radius: 999px; padding: 0.1rem 0.5rem;
+}
+
+.proc-back {
+  background: none; border: none; color: var(--dim); cursor: pointer; font-size: 0.85rem;
+  font-weight: 600; padding: 0; margin-bottom: 1rem;
+}
+.proc-back:hover { color: var(--text); }
+
+.proc-detail { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1.6rem 1.8rem; }
+.proc-detail-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; margin-bottom: 0.6rem; }
+.proc-detail-head h2 { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; }
+.proc-when { color: var(--dim); font-size: 0.86rem; margin-top: 0.3rem; line-height: 1.5; max-width: 52ch; }
+
+.proc-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.proc-btn {
+  background: #fff; color: var(--text); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.4rem 0.95rem; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+  transition: border-color 0.15s, background 0.15s;
+}
+.proc-btn:hover { border-color: #d0d0d0; background: var(--panel); }
+.proc-btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+.proc-btn.primary:hover { opacity: 0.85; background: var(--text); }
+.proc-btn.subtle { color: var(--dim); }
+
+.proc-notice {
+  background: #ecfdf3; border: 1px solid #abefc6; color: #067647;
+  border-radius: 10px; padding: 0.55rem 0.9rem; font-size: 0.82rem; font-weight: 600;
+  margin: 0.6rem 0;
+}
+
+.proc-body { margin-top: 0.9rem; font-size: 0.92rem; line-height: 1.65; }
+.proc-para { margin: 0.55rem 0; }
+.proc-gap { height: 0.45rem; }
+.proc-step { display: flex; gap: 0.7rem; margin: 0.5rem 0; }
+.proc-step-n {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--panel);
+  border: 1px solid var(--border); color: var(--dim); font-size: 0.72rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; margin-top: 0.15rem;
+}
+.proc-bullet { padding-left: 1.1em; position: relative; margin: 0.35rem 0; }
+.proc-bullet::before { content: "\2022"; position: absolute; left: 0.25em; color: var(--dim); }
+
+.tool-chip {
+  display: inline-block; background: #eef6f3; border: 1px solid #cfe8df; color: #0b7a5e;
+  border-radius: 6px; padding: 0.02em 0.42em; font-size: 0.84em; font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap;
+}
+
+.proc-editor textarea {
+  width: 100%; min-height: 420px; resize: vertical; margin-top: 0.9rem;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.84rem; line-height: 1.6; color: var(--text); outline: none;
+}
+.proc-editor textarea:focus { border-color: #b8b8b8; }
+.proc-editor .proc-actions { margin-top: 0.7rem; }
+.proc-hint { color: var(--dim); font-size: 0.78rem; margin-top: 0.7rem; line-height: 1.5; }

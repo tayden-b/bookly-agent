@@ -9,6 +9,10 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
 
 
+class ProcedureUpdate(BaseModel):
+    content: str = Field(min_length=1, max_length=8000)
+
+
 class TraceEvent(BaseModel):
     kind: Literal[
         "tool_call",    # tool requested by the model

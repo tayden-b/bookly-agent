@@ -117,15 +117,15 @@ Stays in role, and the trace shows it deliberately called no tools.
 
 ## Reading the code
 
-Five files, in the order that makes sense. About 530 lines of Python total.
+Five files, in the order that makes sense. About 620 lines of Python total.
 
 | File | Lines | What it is |
 |---|---|---|
-| `backend/procedures/*.md` | | What the agent is **told** to do, in plain English. A support lead could edit these. |
+| `backend/procedures/*.md` | | What the agent is **told** to do, in plain English. A support lead can edit these, and there is a **Procedures** tab in the UI where they actually can: changes go live on the agent's next message, no restart. |
 | `backend/tools.py` | 248 | What the agent **can** do, plus the checks on `create_return` it cannot get around. |
-| `backend/orchestrator.py` | 133 | The control layer. Builds the prompt, runs the loop, records the trace. |
-| `backend/memory.py` | 46 | Two separate stores: what was said, and what we actually know. |
-| `frontend/src/components/TracePanel.jsx` | | Renders the trace panel. |
+| `backend/orchestrator.py` | 136 | The control layer. Builds the prompt, runs the loop, records the trace. Procedures are read fresh each turn so edits apply immediately. |
+| `backend/memory.py` | 66 | Two separate stores: what was said, and what we actually know. |
+| `frontend/src/components/TracePanel.jsx` | | Renders the trace panel. Collapsible, so the demo can show the customer view alone. |
 
 **The split between the first two is the whole design.** Procedures are guidance and the model
 may interpret them loosely. The gates are not guidance.
