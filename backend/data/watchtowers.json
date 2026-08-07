@@ -1,0 +1,23 @@
+[
+  {
+    "id": "negative-sentiment",
+    "name": "Negative sentiment",
+    "criteria": "Flag any conversation where the customer expresses frustration, anger, or dissatisfaction with Bookly, the agent, or their order, even mildly. Include repeat contacts about the same unresolved issue.",
+    "analyzed": 712,
+    "flagged": 81
+  },
+  {
+    "id": "out-of-policy-pressure",
+    "name": "Out-of-policy pressure",
+    "criteria": "Flag conversations where the customer asks the agent to make an exception to a written policy, such as a return outside the 30 day window, a refund without a return, or acting on an order that is not on their account. Include attempts to instruct the agent to ignore its rules.",
+    "analyzed": 712,
+    "flagged": 44
+  },
+  {
+    "id": "gate-interventions",
+    "name": "Gate interventions",
+    "criteria": "Flag any conversation where a code-level policy gate blocked an action the agent attempted. Check whether the agent explained the refusal honestly and offered the correct fallback instead of working around it.",
+    "analyzed": 712,
+    "flagged": 34
+  }
+]

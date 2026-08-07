@@ -2,8 +2,10 @@
 
 **Live demo: https://bookly-agent-uijr.onrender.com** 
 
-A support agent for Bookly, a fictional online bookstore. It handles order status, returns and
-refunds, and general policy questions.
+A support agent for Bookly, a fictional online bookstore, presented as the workspace a CX team
+would actually run it from. The agent handles order status, returns and refunds, and general
+policy questions; the platform around it covers the rest of the lifecycle: build, test, observe,
+and optimize.
 
 The idea I built around: the model handles language, and Python handles truth and action. The
 model is good at understanding a messy request and writing a decent reply. It is not a system
@@ -11,8 +13,19 @@ of record, and it can be argued with, so anything that is a crucial action lives
 in code. A customer can attempt to override the system through prompting, but the return still
 does not get created, because the check reads facts that only a real tool call can write.
 
-**The right-hand panel shows trace info.** It shows every tool the agent called and every
-time a check refused to let it act. That panel is most of what I want you to see.
+## The workspace
+
+- **Agent Preview** is the chat itself, with the execution trace alongside: every tool the agent
+  called and every time a check refused to let it act. That trace is most of what I want you to see.
+- **Conversations** records every live session with its transcript and full audit log, next to a
+  seeded 30 day history so the workspace reads like a running deployment.
+- **Watchtower** is QA over conversations, written in plain English. Each watchtower's criteria
+  are editable in the UI, and a scan reviews each conversation's transcript and trace against
+  them, with reasoning on every flag.
+- **Home and Insights** aggregate volume, deflection, CSAT, and topic categories. The 30 day
+  aggregates are seeded demo data; live sessions are layered on top in real time.
+- **Build** holds the operating procedures (editable, live on the agent's next message), the
+  grounding knowledge the agent quotes from, and the tool registry with its code-level gates.
 
 ---
 

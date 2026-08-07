@@ -1,21 +1,31 @@
 import { useState } from "react";
-import Chat from "./components/Chat.jsx";
-import TracePanel from "./components/TracePanel.jsx";
-import ProceduresPanel from "./components/ProceduresPanel.jsx";
-import { sendMessage, resetSession } from "./api.js";
+import Sidebar from "./components/Sidebar.jsx";
+import HomePage from "./components/HomePage.jsx";
+import ConversationsPage from "./components/ConversationsPage.jsx";
+import WatchtowerPage from "./components/WatchtowerPage.jsx";
+import InsightsPage from "./components/InsightsPage.jsx";
+import BuildPage from "./components/BuildPage.jsx";
+import PreviewPage from "./components/PreviewPage.jsx";
+import { sendMessage, resetSession, newSession } from "./api.js";
+
+const GREETING = {
+  role: "agent",
+  text: "Hi! I'm the Bookly support agent. I can check an order, help with a return or refund, or answer questions about our policies. What can I do for you?",
+};
 
 export default function App() {
-  const [messages, setMessages] = useState([
-    {
-      role: "agent",
-      text: "Hi! I'm the Bookly support agent. I can check an order, help with a return or refund, or answer questions about our policies. What can I do for you?",
-    },
-  ]);
+  const [page, setPage] = useState("home");
+
+  // Chat state lives here so the conversation survives navigating the platform.
+  const [messages, setMessages] = useState([GREETING]);
   const [turns, setTurns] = useState([]); // one entry per agent turn: {trace, state}
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [view, setView] = useState("chat"); // "chat" | "procedures"
   const [traceOpen, setTraceOpen] = useState(true);
+
+  // Cross-page intents: Insights and Watchtower deep-link into Conversations.
+  const [convFilter, setConvFilter] = useState(null);
+  const [convFocus, setConvFocus] = useState(null);
 
   async function handleSend(text) {
     setMessages((m) => [...m, { role: "user", text }]);
@@ -32,44 +42,54 @@ export default function App() {
     }
   }
 
-  function handleReset() {
+  function handleNewConversation() {
     resetSession();
-    window.location.reload();
+    newSession();
+    setMessages([GREETING]);
+    setTurns([]);
+    setError(null);
+  }
+
+  function openCategory(tag) {
+    setConvFilter(tag);
+    setConvFocus(null);
+    setPage("conversations");
+  }
+
+  function openConversation(id) {
+    setConvFocus(id);
+    setPage("conversations");
   }
 
   return (
-    <div className="app">
-      <header className="header">
-        <div>
-          <span className="logo">Bookly</span>
-          <span className="tagline">Support Agent</span>
-        </div>
-        <nav className="views">
-          <button
-            className={view === "chat" ? "view-tab active" : "view-tab"}
-            onClick={() => setView("chat")}
-          >
-            Chat
-          </button>
-          <button
-            className={view === "procedures" ? "view-tab active" : "view-tab"}
-            onClick={() => setView("procedures")}
-          >
-            Procedures
-          </button>
-        </nav>
-        <button className="reset" onClick={handleReset}>New conversation</button>
-      </header>
-      {view === "chat" ? (
-        <main className={traceOpen ? "panes" : "panes trace-collapsed"}>
-          <Chat messages={messages} loading={loading} error={error} onSend={handleSend} />
-          <TracePanel turns={turns} open={traceOpen} onToggle={() => setTraceOpen((o) => !o)} />
-        </main>
-      ) : (
-        <main className="panes single">
-          <ProceduresPanel />
-        </main>
-      )}
+    <div className="platform">
+      <Sidebar page={page} onNavigate={setPage} />
+      <main className="page">
+        {page === "home" && <HomePage />}
+        {page === "conversations" && (
+          <ConversationsPage
+            filterTag={convFilter}
+            onClearFilter={() => setConvFilter(null)}
+            focusId={convFocus}
+            onFocusHandled={() => setConvFocus(null)}
+          />
+        )}
+        {page === "watchtower" && <WatchtowerPage onOpenConversation={openConversation} />}
+        {page === "insights" && <InsightsPage onOpenCategory={openCategory} />}
+        {page === "build" && <BuildPage />}
+        {page === "preview" && (
+          <PreviewPage
+            messages={messages}
+            turns={turns}
+            loading={loading}
+            error={error}
+            traceOpen={traceOpen}
+            onSend={handleSend}
+            onToggleTrace={() => setTraceOpen((o) => !o)}
+            onNewConversation={handleNewConversation}
+          />
+        )}
+      </main>
     </div>
   );
 }

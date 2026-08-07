@@ -13,6 +13,10 @@ class ProcedureUpdate(BaseModel):
     content: str = Field(min_length=1, max_length=8000)
 
 
+class WatchtowerUpdate(BaseModel):
+    criteria: str = Field(min_length=1, max_length=2000)
+
+
 class TraceEvent(BaseModel):
     kind: Literal[
         "tool_call",    # tool requested by the model

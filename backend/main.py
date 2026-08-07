@@ -6,10 +6,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+import conversations
 import llm_client
 import orchestrator
+import tools
+import watchtower
 from memory import get_session, reset_session
-from schemas import ChatRequest, ChatResponse, ProcedureUpdate, TraceEvent
+from schemas import ChatRequest, ChatResponse, ProcedureUpdate, TraceEvent, WatchtowerUpdate
 
 log = logging.getLogger("bookly")
 
@@ -28,7 +31,9 @@ _ORIGINAL_PROCEDURES = {
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
     try:
-        return orchestrator.handle_message(req.session_id, req.message)
+        resp = orchestrator.handle_message(req.session_id, req.message)
+        conversations.record_turn(req.session_id, req.message, resp)
+        return resp
     except Exception:
         # Everything below the gates is unguarded: a rate limit or overload from
         # the model API, or a tool called with an argument it does not accept,
@@ -37,7 +42,7 @@ def chat(req: ChatRequest) -> ChatResponse:
         # Deliberately not caught here: GateBlocked, which the orchestrator
         # handles as a normal part of a turn rather than as a failure.
         log.exception("chat failed, session=%s", req.session_id)
-        return ChatResponse(
+        resp = ChatResponse(
             reply="Sorry, something went wrong on my end. Could you send that again?",
             trace=[TraceEvent(
                 kind="note",
@@ -46,6 +51,8 @@ def chat(req: ChatRequest) -> ChatResponse:
             )],
             state=get_session(req.session_id).snapshot(),
         )
+        conversations.record_turn(req.session_id, req.message, resp)
+        return resp
 
 
 @app.post("/api/reset/{session_id}")
@@ -78,6 +85,91 @@ def reset_procedure(name: str) -> dict:
     original = _ORIGINAL_PROCEDURES[name]
     (orchestrator.PROCEDURES_DIR / name).write_text(original)
     return {"ok": True, "content": original}
+
+
+# ------------------------------------------------ platform views
+# Everything below is read-side plumbing for the admin UI (Home, Conversations,
+# Watchtower, Insights, Build). None of it touches the agent's control path.
+
+# Gate summaries surfaced on the Build > Tools page. Kept here rather than in
+# tools.py so the enforcement code stays free of presentation concerns.
+_TOOL_GATES = {
+    "get_order": "Requires a verified customer identity. Blocked unless the order belongs to the customer set by a real lookup_orders result.",
+    "check_return_eligibility": "Requires a verified customer identity for the order being checked.",
+    "create_return": "Triple gated: a tool-written eligibility fact, a later turn than that check, and explicit customer confirmation.",
+}
+
+
+@app.get("/api/conversations")
+def list_conversations() -> list[dict]:
+    return conversations.summaries()
+
+
+@app.get("/api/conversations/{conv_id}")
+def get_conversation(conv_id: str) -> dict:
+    conv = conversations.get_conversation(conv_id)
+    if conv is None:
+        raise HTTPException(404, f"unknown conversation: {conv_id}")
+    return conv
+
+
+@app.get("/api/metrics")
+def metrics() -> dict:
+    return conversations.metrics()
+
+
+@app.get("/api/watchtower")
+def watchtower_state() -> dict:
+    return watchtower.state()
+
+
+@app.put("/api/watchtower/{wt_id}")
+def update_watchtower(wt_id: str, req: WatchtowerUpdate) -> dict:
+    if watchtower.find(wt_id) is None:
+        raise HTTPException(404, f"unknown watchtower: {wt_id}")
+    watchtower.update_criteria(wt_id, req.criteria)
+    return {"ok": True}
+
+
+@app.post("/api/watchtower/{wt_id}/reset")
+def reset_watchtower(wt_id: str) -> dict:
+    if watchtower.find(wt_id) is None:
+        raise HTTPException(404, f"unknown watchtower: {wt_id}")
+    return {"ok": True, "criteria": watchtower.reset_criteria(wt_id)}
+
+
+@app.post("/api/watchtower/run")
+def run_watchtower() -> dict:
+    return watchtower.run_scan()
+
+
+@app.get("/api/knowledge")
+def knowledge() -> list[dict]:
+    out = []
+    for path in sorted((tools.DATA_DIR / "policies").glob("*.md")):
+        content = path.read_text()
+        title = next(
+            (l.removeprefix("# ").strip() for l in content.splitlines() if l.startswith("# ")),
+            path.stem.replace("_", " ").title(),
+        )
+        out.append({"name": path.name, "title": title, "content": content})
+    return out
+
+
+@app.get("/api/tools")
+def list_tools() -> list[dict]:
+    return [
+        {
+            "name": spec["name"],
+            "description": spec["description"],
+            "params": [
+                {"name": p, "type": s.get("type", "string"), "required": p in spec["input_schema"].get("required", [])}
+                for p, s in spec["input_schema"].get("properties", {}).items()
+            ],
+            "gate": _TOOL_GATES.get(spec["name"]),
+        }
+        for spec in tools.TOOL_SPECS
+    ]
 
 
 @app.get("/api/health")
